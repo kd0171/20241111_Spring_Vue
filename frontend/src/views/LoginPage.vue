@@ -20,6 +20,10 @@
     <div v-if="adminData">Admin Data: {{ adminData }}</div>
     <div v-if="securedData">Secured Data: {{ securedData }}</div>
     <div v-if="errorMessage" style="color: red;">Error: {{ errorMessage }}</div>
+    <div>
+    <!-- 前のコード -->
+    <button @click="logout">Logout</button>
+  </div>
   </div>
 </template>
 
@@ -54,7 +58,12 @@ export default {
         this.token = '';
       }
     },
-
+    logout() {
+      localStorage.removeItem('accessToken');
+      this.token = '';
+      this.securedData = '';
+      this.$router.push('/login');
+    },
     // 管理者エンドポイントにアクセス
     async accessAdminEndpoint() {
       if (!this.token) return;

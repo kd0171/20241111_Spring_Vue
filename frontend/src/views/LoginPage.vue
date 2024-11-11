@@ -11,7 +11,7 @@
     <div v-if="token">Token: {{ token }}</div>
 
     <!-- /admin エンドポイントのテストボタン -->
-    <button @click="accessAdminEndpoint" :disabled="!token">Access Admin Endpoint</button>
+    <button @click="accessAdminEndpoint" :disabled="!token || userRole !== 'ROLE_ADMIN'">Access Admin Endpoint</button>
 
     <!-- /secured エンドポイントのテストボタン -->
     <button @click="accessSecuredEndpoint" :disabled="!token">Access Secured Endpoint</button>
@@ -24,7 +24,22 @@
 </template>
 
 <script>
+
 import axios from 'axios';
+
+// JWTデコード関数
+function decodeJWT(token) {
+  const base64Url = token.split('.')[1]; // Payload部分
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
+
+  return JSON.parse(jsonPayload);
+}
 
 export default {
   data() {
@@ -32,6 +47,7 @@ export default {
       email: '',
       password: '',
       token: '',
+      userRole: '',  // ユーザーロール
       adminData: '',
       securedData: '',
       errorMessage: ''
@@ -49,15 +65,26 @@ export default {
         this.token = response.data.accessToken;
         localStorage.setItem('accessToken', this.token); // トークンをlocalStorageに保存
 
-        // メールアドレスとユーザーロールをlocalStorageに保存
-        localStorage.setItem('userEmail', response.data.email);    // 追加
-        localStorage.setItem('userRole', response.data.role);      // 追加
+        // JWTトークンをデコードしてメールアドレスとロールを取得
+        const decoded = decodeJWT(this.token);
+        const userEmail = decoded.e;  // メールアドレス
+        const userRole = decoded.a[0]; // ロール（配列の最初の要素）
+
+        // メールアドレスとロールをlocalStorageに保存
+        localStorage.setItem('userEmail', userEmail);
+        localStorage.setItem('userRole', userRole);
+
+        this.userRole = userRole;  // ロールをセット
 
         window.dispatchEvent(new Event('authChanged')); // カスタムイベントを発火して、HeaderComponentに状態を伝える
         this.errorMessage = '';
         
-        // ログイン後にダッシュボードページにリダイレクト
-        this.$router.push('/admin');
+        // ロールに基づいてリダイレクト先を変更
+        if (userRole === 'ROLE_ADMIN') {
+          this.$router.push('/admin');
+        } else {
+          this.$router.push('/user');
+        }
       } catch (error) {
         console.error("Login failed:", error);
         this.errorMessage = "Invalid email or password.";
@@ -66,7 +93,11 @@ export default {
     },
     // 管理者エンドポイントにアクセス
     async accessAdminEndpoint() {
-      if (!this.token) return;
+      if (!this.token || this.userRole !== 'ROLE_ADMIN') {
+        this.errorMessage = "Access denied. Admins only.";
+        return;
+      }
+
       try {
         const response = await axios.get('http://localhost:8080/admin', {
           headers: {
@@ -103,8 +134,10 @@ export default {
   // コンポーネントがマウントされたときにlocalStorageからトークンを取得
   mounted() {
     const storedToken = localStorage.getItem('accessToken');
+    const storedUserRole = localStorage.getItem('userRole');
     if (storedToken) {
       this.token = storedToken; // localStorageから取得したトークンをセット
+      this.userRole = storedUserRole; // localStorageから取得したロールをセット
     }
   }
 };

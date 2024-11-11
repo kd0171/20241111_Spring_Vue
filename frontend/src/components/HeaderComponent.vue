@@ -4,6 +4,8 @@
       <router-link to="/">Home</router-link>
       <router-link v-if="!isLoggedIn" to="/login">Login</router-link>
       <a v-else @click="logout" style="cursor: pointer;">Logout</a>
+      <!-- 管理者の場合にのみ表示されるリンク -->
+      <router-link v-if="isLoggedIn && userRole === 'ROLE_ADMIN'" to="/dashboard" style="cursor: pointer;">Admin Dashboard</router-link>
     </nav>
 
     <!-- 右端にWelcome メッセージとユーザー情報を表示 -->

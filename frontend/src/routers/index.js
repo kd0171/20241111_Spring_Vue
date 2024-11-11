@@ -1,42 +1,42 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import LoginPage from '../views/LoginPage.vue';
 import HomePage from '../views/HomePage.vue';
+import LoginPage from '../views/LoginPage.vue';
 import AdminPage from '../views/AdminPage.vue';
 import DashboardPage from '../views/DashboardPage.vue';
+import UserPage from '../views/UserPage.vue';
 
 const routes = [
-  { path: '/login', component: LoginPage },
   { path: '/', component: HomePage },
-  {
-    path: '/admin', 
-    component: AdminPage, 
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/dashboard', 
-    component: DashboardPage, 
-    meta: { requiresAuth: true }
-  },
+  { path: '/login', component: LoginPage },
+  { path: '/admin', component: AdminPage, meta: { requiresAuth: true, role: 'ROLE_ADMIN' } },
+  { path: '/dashboard', component: DashboardPage, meta: { requiresAuth: true, role: 'ROLE_ADMIN' } },  // 修正
+  { path: '/user', component: UserPage, meta: { requiresAuth: true, role: 'ROLE_USER' } },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes
 });
 
+// グローバルナビゲーションガード
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('accessToken');
-  const userRole = localStorage.getItem('userRole'); // 例えば、ロール情報がlocalStorageに保存されていると仮定
-
-  // 認証が必要なページにアクセスする場合
-  if (to.meta.requiresAuth && !token) {
-    next('/login'); // ログインしていない場合、ログインページにリダイレクト
-  }
-  // 管理者専用ページにアクセスする場合
-  else if (to.meta.requiresAdmin && userRole !== 'admin') {
-    next('/'); // 管理者以外はホームにリダイレクト
+  const userRole = localStorage.getItem('userRole');
+  
+  // ルートが認証を必要とする場合
+  if (to.meta.requiresAuth) {
+    if (!token) {
+      // ログインしていない場合、ログインページにリダイレクト
+      next('/login');
+    } else if (to.meta.role && to.meta.role !== userRole) {
+      // ユーザーが適切なロールでない場合、アクセスを拒否
+      next('/'); // ホームページなどにリダイレクト
+    } else {
+      // アクセスが許可された場合、次のルートへ
+      next();
+    }
   } else {
-    next(); // 他の場合はそのまま進む
+    next(); // 認証が不要なページにはそのまま進む
   }
 });
 

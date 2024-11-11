@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>I am Admin</h2>
-    
+
     <!-- 画面上にuserRoleを表示 -->
     <p>User Role: {{ userRole }}</p>
 
@@ -21,20 +21,17 @@ export default {
   data() {
     return {
       isAdmin: false, // 初期状態では管理者でないと仮定
-      userRole: '',   // userRoleをデータに追加
+      userRole: '',   // userRoleをデータに格納
     };
   },
   mounted() {
-    // ログイン状態とロールの確認
+    // コンポーネントがマウントされた時にlocalStorageからuserRoleを取得
     const role = localStorage.getItem('userRole');
     this.userRole = role; // 取得したuserRoleをデータに格納
 
-    // ユーザーが管理者の場合
+    // 管理者の場合のみコンテンツを表示
     if (role === 'ROLE_ADMIN') {
-      this.isAdmin = true; // 管理者ならtrue
-    } else {
-      // 管理者でない場合、ホームにリダイレクト
-      this.$router.push('/');
+      this.isAdmin = true;
     }
   }
 };

@@ -20,10 +20,6 @@
     <div v-if="adminData">Admin Data: {{ adminData }}</div>
     <div v-if="securedData">Secured Data: {{ securedData }}</div>
     <div v-if="errorMessage" style="color: red;">Error: {{ errorMessage }}</div>
-    <div>
-    <!-- 前のコード -->
-    <button @click="logout">Logout</button>
-  </div>
   </div>
 </template>
 
@@ -49,23 +45,24 @@ export default {
           email: this.email,
           password: this.password
         });
+
         this.token = response.data.accessToken;
         localStorage.setItem('accessToken', this.token); // トークンをlocalStorageに保存
-        // カスタムイベントを発火して、HeaderComponentに状態を伝える
-        window.dispatchEvent(new Event('authChanged'));
+
+        // メールアドレスとユーザーロールをlocalStorageに保存
+        localStorage.setItem('userEmail', response.data.email);    // 追加
+        localStorage.setItem('userRole', response.data.role);      // 追加
+
+        window.dispatchEvent(new Event('authChanged')); // カスタムイベントを発火して、HeaderComponentに状態を伝える
         this.errorMessage = '';
-        this.$router.push('/'); // ログイン後にホームページにリダイレクト
+        
+        // ログイン後にダッシュボードページにリダイレクト
+        this.$router.push('/admin');
       } catch (error) {
         console.error("Login failed:", error);
         this.errorMessage = "Invalid email or password.";
         this.token = '';
       }
-    },
-    logout() {
-      localStorage.removeItem('accessToken');
-      this.token = '';
-      this.securedData = '';
-      this.$router.push('/login');
     },
     // 管理者エンドポイントにアクセス
     async accessAdminEndpoint() {

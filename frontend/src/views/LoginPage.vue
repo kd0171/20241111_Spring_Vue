@@ -51,7 +51,10 @@ export default {
         });
         this.token = response.data.accessToken;
         localStorage.setItem('accessToken', this.token); // トークンをlocalStorageに保存
+        // カスタムイベントを発火して、HeaderComponentに状態を伝える
+        window.dispatchEvent(new Event('authChanged'));
         this.errorMessage = '';
+        this.$router.push('/'); // ログイン後にホームページにリダイレクト
       } catch (error) {
         console.error("Login failed:", error);
         this.errorMessage = "Invalid email or password.";

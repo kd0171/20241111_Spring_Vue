@@ -17,20 +17,25 @@ export default {
     };
   },
   mounted() {
-    // コンポーネントがマウントされた時にlocalStorageからトークンをチェック
+    // マウント時にトークンをチェック
     this.isLoggedIn = !!localStorage.getItem('accessToken');
+
+    // カスタムイベントのリスナーを追加
+    window.addEventListener('authChanged', this.updateAuthStatus);
+  },
+  beforeUnmount() {
+    // コンポーネントがアンマウントされる際にイベントリスナーを削除
+    window.removeEventListener('authChanged', this.updateAuthStatus);
   },
   methods: {
     logout() {
-      // ログアウト処理：トークンを削除してログイン状態を更新
       localStorage.removeItem('accessToken');
       this.isLoggedIn = false;
+      window.dispatchEvent(new Event('authChanged')); // ログアウト後にカスタムイベントを発火
       this.$router.push('/'); // ログアウト後にホームページにリダイレクト
-    }
-  },
-  watch: {
-    // 他のコンポーネントでログイン状態が変更された場合に対応するため
-    '$route'() {
+    },
+    updateAuthStatus() {
+      // トークンの有無に応じてログイン状態を更新
       this.isLoggedIn = !!localStorage.getItem('accessToken');
     }
   }
